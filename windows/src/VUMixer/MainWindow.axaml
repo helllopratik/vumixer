@@ -1,0 +1,8 @@
+<Window x:Class="VUMixer.MainWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="VU Mixer"
+        Width="880" Height="780" MinWidth="700" MinHeight="600"
+        Background="#10131A" Foreground="#E7ECF5">
+  <DockPanel x:Name="Root" Margin="14"/>
+</Window>

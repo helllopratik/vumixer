@@ -16,6 +16,28 @@ audio mixer the way VoiceMeeter does on Windows:
 Everything runs natively in PipeWire. **No audio ever passes through the
 browser or Python** — the web page is only a remote control.
 
+---
+
+## Windows version
+
+There is also a **native Windows port** — a single self-contained
+`VUMixer.exe` (C# / .NET 8 + Avalonia UI + WASAPI). No Python, no runtime
+installs, no admin rights: copy the exe anywhere and double-click. It mirrors
+this app's features — mic gain/mute, desktop loopback, A/B buses, per-bus mic
+sends, noise reduction, VU meters, hotplug repair, event log.
+
+> Full project spec (read this first if you're picking the project up):
+> [`PROJECT-PC.md`](./PROJECT-PC.md) · source lives in [`windows/`](./windows/).
+
+```sh
+cd windows && ./build.sh          # from any OS → windows/publish/VUMixer.exe
+```
+
+Status: **v0.1.0-win (test build)** — cross-compiled on Linux as a PE32+
+Windows binary; real-device testing checklist in `PROJECT-PC.md` §10.
+
+---
+
 ```
         ┌────────────────────────────────────────────┐
         │   your PC / PipeWire                        │

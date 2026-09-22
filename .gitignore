@@ -3,6 +3,11 @@ vimeter
 __pycache__/
 *.pyc
 
+# .NET build output (Windows port)
+windows/publish/
+windows/src/VUMixer/bin/
+windows/src/VUMixer/obj/
+
 # Machine-specific runtime state (recreated automatically; safe to delete)
 vumixer.pid
 config.json
