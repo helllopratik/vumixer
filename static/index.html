@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VU Mixer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">VU</span>
+    <span class="brand-name">Mixer</span>
+    <span class="brand-sub">virtual audio mixer · <b id="ver-tag">v4</b> · <span id="code-tag" class="code-tag">code …</span></span>
+  </div>
+  <div class="topbar-actions">
+    <span id="status" class="status status--wait">connecting…</span>
+    <button id="btn-refresh" class="btn btn--ghost" title="Check for newly plugged-in devices and repair the audio routing">Refresh devices</button>
+    <button id="btn-move" class="btn btn--ghost" title="Move every app that is currently playing into VM-System">Catch desktop audio</button>
+    <button id="btn-diagnose" class="btn">Mic routing</button>
+    <button id="btn-help" class="btn btn--ghost">Help</button>
+  </div>
+</header>
+
+<main class="rack">
+
+  <!-- ============ INPUTS ============ -->
+  <section class="group">
+    <h2 class="group-title">Hardware input</h2>
+
+    <article class="strip strip--mic" id="strip-mic">
+      <div class="strip-head">
+        <span class="badge badge--mic">MIC</span>
+        <span class="strip-note">mic bus · sends to A / B</span>
+      </div>
+
+      <label class="field">
+        <span class="field-label">Input device</span>
+        <select id="mic-device" class="select"></select>
+      </label>
+
+      <div class="vu" data-meter="MIC" aria-label="Microphone level">
+        <div class="vu-row"><span class="vu-ch">L</span><div class="vu-track"><div class="vu-fill"></div><div class="vu-peak"></div></div></div>
+        <div class="vu-row"><span class="vu-ch">R</span><div class="vu-track"><div class="vu-fill"></div><div class="vu-peak"></div></div></div>
+        <div class="vu-clip" title="clipping">CLIP</div>
+      </div>
+
+      <div class="fader">
+        <div class="fader-top"><span>Gain</span><span class="fader-val" id="mic-gain-val">100%</span></div>
+        <input type="range" id="mic-gain" min="0" max="150" step="1" value="100">
+      </div>
+      <button class="mute" id="mic-mute">MUTE</button>
+
+      <div class="sends">
+        <span class="sends-label">mic →</span>
+        <button class="send" id="mic-send-a" title="Send the microphone to bus A">A</button>
+        <button class="send" id="mic-send-b" title="Send the microphone to bus B">B</button>
+        <button class="send send--fx" id="mic-ns"
+                title="Noise suppression (WebRTC): removes background noise from the mic input">NS</button>
+      </div>
+    </article>
+
+    <article class="strip strip--system" id="strip-system">
+      <div class="strip-head">
+        <span class="badge badge--sys">SYSTEM</span>
+        <span class="strip-note">desktop / host audio</span>
+      </div>
+      <p class="hint">Everything playing to the default output lands in <b>VM-System</b> and is copied to A + B.</p>
+
+      <div class="vu" data-meter="SYS" aria-label="Desktop level">
+        <div class="vu-row"><span class="vu-ch">L</span><div class="vu-track"><div class="vu-fill"></div><div class="vu-peak"></div></div></div>
+        <div class="vu-row"><span class="vu-ch">R</span><div class="vu-track"><div class="vu-fill"></div><div class="vu-peak"></div></div></div>
+        <div class="vu-clip" title="clipping">CLIP</div>
+      </div>
+
+      <div class="fader">
+        <div class="fader-top"><span>Gain</span><span class="fader-val" id="system-gain-val">100%</span></div>
+        <input type="range" id="system-gain" min="0" max="150" step="1" value="100">
+      </div>
+      <button class="mute" id="system-mute">MUTE</button>
+    </article>
+  </section>
+
+  <!-- ============ OUTPUTS ============ -->
+  <section class="group">
+    <h2 class="group-title">Output buses</h2>
+
+    <article class="strip strip--bus" id="strip-a">
+      <div class="strip-head">
+        <span class="badge badge--a">A</span>
+        <span class="strip-note">output bus</span>
+      </div>
+      <label class="field">
+        <span class="field-label">Output device</span>
+        <select id="a-device" class="select"></select>
+      </label>
+
+      <div class="vu" data-meter="A" aria-label="Bus A level">
+        <div class="vu-row"><span class="vu-ch">L</span><div class="vu-track"><div class="vu-fill"></div><div class="vu-peak"></div></div></div>
+        <div class="vu-row"><span class="vu-ch">R</span><div class="vu-track"><div class="vu-fill"></div><div class="vu-peak"></div></div></div>
+        <div class="vu-clip" title="clipping">CLIP</div>
+      </div>
+
+      <div class="fader">
+        <div class="fader-top"><span>Master</span><span class="fader-val" id="a-gain-val">100%</span></div>
+        <input type="range" id="a-gain" min="0" max="150" step="1" value="100">
+      </div>
+      <button class="mute" id="a-mute">MUTE</button>
+    </article>
+
+    <article class="strip strip--bus" id="strip-b">
+      <div class="strip-head">
+        <span class="badge badge--b">B</span>
+        <span class="strip-note">output bus</span>
+      </div>
+      <label class="field">
+        <span class="field-label">Output device</span>
+        <select id="b-device" class="select"></select>
+      </label>
+
+      <div class="vu" data-meter="B" aria-label="Bus B level">
+        <div class="vu-row"><span class="vu-ch">L</span><div class="vu-track"><div class="vu-fill"></div><div class="vu-peak"></div></div></div>
+        <div class="vu-row"><span class="vu-ch">R</span><div class="vu-track"><div class="vu-fill"></div><div class="vu-peak"></div></div></div>
+        <div class="vu-clip" title="clipping">CLIP</div>
+      </div>
+
+      <div class="fader">
+        <div class="fader-top"><span>Master</span><span class="fader-val" id="b-gain-val">100%</span></div>
+        <input type="range" id="b-gain" min="0" max="150" step="1" value="100">
+      </div>
+      <button class="mute" id="b-mute">MUTE</button>
+    </article>
+  </section>
+
+</main>
+
+<!-- ============ DIALOGS ============ -->
+<dialog id="dlg-diagnose" class="dialog">
+  <div class="dialog-head">
+    <h3>Microphone routing &amp; conflicts</h3>
+    <button class="dialog-close" data-close="dlg-diagnose">&times;</button>
+  </div>
+  <div class="dialog-body" id="diag-body">loading…</div>
+</dialog>
+
+<dialog id="dlg-help" class="dialog">
+  <div class="dialog-head">
+    <h3>How to use VU Mixer</h3>
+    <button class="dialog-close" data-close="dlg-help">&times;</button>
+  </div>
+  <div class="dialog-body">
+    <ol class="help-list">
+      <li><b>Pick your microphone</b> in the MIC strip. Its gain and VU meter are shown there. Use the <b>A</b>/<b>B</b> buttons below it to choose which output buses receive the mic — e.g. turn <b>A</b> off so you don't hear yourself, keep <b>B</b> on to send the voice to the other PC over HDMI.</li>
+      <li><b>Noise suppression:</b> press <b>NS</b> on the mic strip to remove background noise with the built-in WebRTC filter (no extra software installed).</li>
+      <li><b>Pick a device for A and for B</b> — for example your headset on A and HDMI on B. Desktop audio is copied to both; the mic only to the buses you enabled.</li>
+      <li><b>Desktop audio</b> is captured by making <code>VM-System</code> the default output. If something is already playing elsewhere, press <b>Catch desktop audio</b>.</li>
+      <li><b>Other apps</b> (Discord, OBS, browsers…) should select <code>Monitor of VM-Mic</code> as their <i>input</i>. Then they get the same mixed mic signal without grabbing the hardware microphone.</li>
+      <li>Audio flows only while this app is running. Closing it removes the virtual devices and restores your previous defaults.</li>
+    </ol>
+    <p class="muted">Tip: this is the Linux/PipeWire equivalent of VoiceMeeter. All routing happens natively in PipeWire — no audio passes through the browser or Python.</p>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+
+<details class="logpanel" id="log-panel">
+  <summary>
+    <span class="lp-title">Debug log — what happens when you click A / B / NS</span>
+    <span class="lp-hint">closed when not needed · copy the text and send it to me if something misbehaves</span>
+  </summary>
+  <div class="lp-body">
+    <textarea id="log-box" readonly spellcheck="false"
+      placeholder="(click A, B or NS above — every action is logged here with a timestamp)"></textarea>
+    <div class="lp-actions">
+      <button id="log-copy" class="btn btn--ghost" type="button">Copy log</button>
+      <button id="log-clear" class="btn btn--ghost" type="button">Clear</button>
+    </div>
+  </div>
+</details>
+
+<script src="app.js?v=4"></script>
+</body>
+</html>

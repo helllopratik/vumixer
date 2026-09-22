@@ -1,0 +1,14 @@
+# Build artifacts
+vimeter
+__pycache__/
+*.pyc
+
+# Machine-specific runtime state (recreated automatically; safe to delete)
+vumixer.pid
+config.json
+config.json.tmp
+
+# Misc
+nohup.out
+*.log
+.DS_Store
