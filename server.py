@@ -59,18 +59,12 @@ VM = {
     "miclink": "vm_miclink",
     "a": "vm_a",
     "b": "vm_b",
-    # per-bus mic pre-gain sinks: each carries the mic feed for one bus at
-    # its own volume, so the mic level can differ between bus A and bus B.
-    "a_mic": "vm_mic_a",
-    "b_mic": "vm_mic_b",
 }
 VM_DESC = {
     "system": "VM-System",
     "miclink": "VM-Mic",
     "a": "VM-Bus-A",
     "b": "VM-Bus-B",
-    "a_mic": "VM-Mic-A",
-    "b_mic": "VM-Mic-B",
 }
 ALL_VM_NAMES = set(VM.values())
 # Virtual nodes owned by the mic "noise suppression" feature (WebRTC AEC):
@@ -100,7 +94,7 @@ MIME = {
 # the latest code (it is surfaced in the UI and compared on every poll).
 BUILD_FILES = ("server.py", "static/app.js", "static/index.html",
                "static/style.css")
-APP_VERSION = "v5"
+APP_VERSION = "v4"
 
 
 def build_id():
@@ -425,33 +419,22 @@ class Graph:
                 self.connect(first, fr)
 
     def link_buses(self, mic_to_a=True, mic_to_b=True):
-        """Desktop audio (vm_system) is copied to both buses.
-
-        The mic (vm_miclink) is routed through a per-bus pre-gain sink
-        (vm_mic_a / vm_mic_b) whose volume is the per-bus mic send level.
-        The pre-gain sink is permanently part of the bus mix, but is only
-        fed while the corresponding send toggle is enabled, so an off send
-        is simply silence.
-        """
+        """Desktop audio (vm_system) is copied to both buses; the mic
+        (vm_miclink) only to the buses whose send toggle is enabled."""
         with self.lock:
             sends = {"a": mic_to_a, "b": mic_to_b}
             for key in ("a", "b"):
                 bus = VM[key]
-                pre = VM[key + "_mic"]
                 self.remove_links_into(bus)
                 self.connect("%s:monitor_FL" % VM["system"],
                              "%s:playback_FL" % bus)
                 self.connect("%s:monitor_FR" % VM["system"],
                              "%s:playback_FR" % bus)
-                self.connect("%s:monitor_FL" % pre,
-                             "%s:playback_FL" % bus)
-                self.connect("%s:monitor_FR" % pre,
-                             "%s:playback_FR" % bus)
                 if sends[key]:
                     self.connect("%s:monitor_FL" % VM["miclink"],
-                                 "%s:playback_FL" % pre)
+                                 "%s:playback_FL" % bus)
                     self.connect("%s:monitor_FR" % VM["miclink"],
-                                 "%s:playback_FR" % pre)
+                                 "%s:playback_FR" % bus)
 
     def link_device(self, bus_key, device_name):
         """Bus monitor -> the real output device's playback ports.
@@ -664,16 +647,9 @@ class App:
         self.mic_ns_enabled = bool(config.get("mic_ns", False))
         self.mic_to_a = bool(config.get("mic_to_a", True))
         self.mic_to_b = bool(config.get("mic_to_b", True))
-        # per-bus mic send level, in percent (0..200).  The user asked for
-        # the mic to be louder on one output (e.g. a capture device) without
-        # changing it on the other, so each bus has its own mic volume.
-        self.mic_vol_a = float(config.get("mic_vol_a", 100.0))
-        self.mic_vol_b = float(config.get("mic_vol_b", 100.0))
         config.setdefault("mic_ns", self.mic_ns_enabled)
         config.setdefault("mic_to_a", self.mic_to_a)
         config.setdefault("mic_to_b", self.mic_to_b)
-        config.setdefault("mic_vol_a", self.mic_vol_a)
-        config.setdefault("mic_vol_b", self.mic_vol_b)
         self.ns_available = any(os.path.exists(p) for p in NS_AEC_PATHS)
         self._last_ns_load_attempt = 0.0
         self._state_cache = None
@@ -744,7 +720,6 @@ class App:
         self.graph.bus_devices["B"] = bus_b
 
         self.graph.apply_all(self.mic_to_a, self.mic_to_b)
-        self._apply_mic_volumes()
         save_config(self.config)
 
         # desktop audio lands in VM-System; new apps read the mixed mic bus
@@ -985,10 +960,6 @@ class App:
                     self._apply_mic_input()
                 except CmdError:
                     pass
-                try:
-                    self._apply_mic_volumes()
-                except CmdError:
-                    pass
                 self.reassert_defaults()
                 self.meters.ensure(self.graph.meter_targets())
                 self.invalidate_state()
@@ -1012,15 +983,12 @@ class App:
                     except CmdError:
                         pass
 
-            # per-bus microphone send toggles (mic -> A / mic -> B).  The
-            # send is a link from the mic bus into that bus's pre-gain sink
-            # (vm_mic_a / vm_mic_b), which is always mixed into its bus.
+            # per-bus microphone send toggles (mic -> A / mic -> B)
             for key, label in (("a", "A"), ("b", "B")):
                 enabled = self.mic_to_a if label == "A" else self.mic_to_b
-                pre = VM[key + "_mic"]
                 has = any(
                     o.startswith(VM["miclink"] + ":monitor_") and
-                    i.startswith(pre + ":playback")
+                    i.startswith(VM[key] + ":playback")
                     for o, i in self.graph.links())
                 try:
                     if enabled and not has:
@@ -1107,8 +1075,6 @@ class App:
             "mics": mics,
             "mic": dict(strip(VM["miclink"]),
                         device=self.graph.mic_device),
-            "mic_vol_a": self.mic_vol_a,
-            "mic_vol_b": self.mic_vol_b,
             "system": strip(VM["system"]),
             "buses": {
                 "A": dict(strip(VM["a"]), device=self.graph.bus_devices.get("A")),
@@ -1138,12 +1104,6 @@ class App:
             run_ok(["pactl", "set-sink-mute", node_name,
                     "1" if body["mute"] else "0"])
         self.invalidate_state()
-
-    def _apply_mic_volumes(self):
-        """Per-bus mic send levels live on the vm_mic_a / vm_mic_b sinks."""
-        for key, vol in (("a_mic", self.mic_vol_a), ("b_mic", self.mic_vol_b)):
-            pct = max(0.0, min(200.0, float(vol)))
-            run_ok(["pactl", "set-sink-volume", VM[key], "%g%%" % pct])
 
     def set_mic(self, device):
         if device not in {m["name"] for m in list_real_mics()}:
@@ -1199,38 +1159,18 @@ class App:
         self._apply_mic_send(key, enabled)
         self.invalidate_state()
 
-    def set_mic_send_vol(self, bus, volume):
-        """Level (0..200%) of the mic feed sent to one bus.  The value is
-        kept on that bus's pre-gain sink (vm_mic_a / vm_mic_b), so boosting
-        the mic on one bus never changes the other bus or the master gain.
-        """
-        key = (bus or "").upper()
-        if key not in ("A", "B"):
-            raise CmdError("bus must be A or B")
-        pct = max(0.0, min(200.0, float(volume)))
-        attr = "mic_vol_a" if key == "A" else "mic_vol_b"
-        setattr(self, attr, pct)
-        self.config[attr] = pct
-        save_config(self.config)
-        run_ok(["pactl", "set-sink-volume",
-                VM[key.lower() + "_mic"], "%g%%" % pct])
-        self.invalidate_state()
-
     def _apply_mic_send(self, key, enabled):
-        """(Un)link the mic bus into the per-bus pre-gain sink.  The
-        pre-gain sink stays mixed into its bus, so an off send is silence."""
-        key = (key or "").upper()
-        pre = VM[key.lower() + "_mic"]
+        bus = VM[key.lower()]
         with self.graph.lock:
             if enabled:
                 self.graph.connect("%s:monitor_FL" % VM["miclink"],
-                                   "%s:playback_FL" % pre)
+                                   "%s:playback_FL" % bus)
                 self.graph.connect("%s:monitor_FR" % VM["miclink"],
-                                   "%s:playback_FR" % pre)
+                                   "%s:playback_FR" % bus)
             else:
                 for o, i in list(self.graph.links(fresh=True)):
                     if o.startswith(VM["miclink"] + ":monitor_") and \
-                       i.startswith(pre + ":playback"):
+                       i.startswith(bus + ":playback"):
                         self.graph.disconnect(o, i)
 
     def set_bus_device(self, bus, device):
@@ -1296,8 +1236,6 @@ class App:
             self.set_mic_ns(body.get("enabled"))
         elif path == "/api/mic/send":
             self.set_mic_send(body.get("bus"), body.get("enabled"))
-        elif path == "/api/mic/send_vol":
-            self.set_mic_send_vol(body.get("bus"), body.get("volume"))
         elif path == "/api/move-streams":
             return self.move_streams(bool(body.get("inputs")))
         elif path == "/api/refresh":

@@ -301,20 +301,6 @@ html, body {
 }
 .fader-val { color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: 0; }
 
-/* per-bus mic send level sliders (mic -> A / mic -> B) */
-.mic-send-vols {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 12px;
-}
-.fader--mini .fader-top {
-  font-size: 10px;
-}
-.fader--mini input[type="range"] {
-  height: 18px;
-}
-
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;

@@ -179,16 +179,6 @@
     }
   }
 
-  function setMicVol(id, value) {
-    const range = document.getElementById(id);
-    const val = document.getElementById(id + '-val');
-    if (!range) return;
-    const v = value == null ? 100 : Number(value);
-    range.dataset.serverVolume = String(v);
-    if (document.activeElement !== range) range.value = String(Math.round(v));
-    if (val) val.textContent = Math.round(v) + '%';
-  }
-
   function setMicFeeds(data) {
     const setBtn = (id, on) => {
       const b = document.getElementById(id);
@@ -207,8 +197,6 @@
     setBtn('mic-send-a', data.mic_to_a);
     setBtn('mic-send-b', data.mic_to_b);
     setBtn('mic-ns', data.mic_ns);
-    setMicVol('mic-vol-a', data.mic_vol_a);
-    setMicVol('mic-vol-b', data.mic_vol_b);
     const ns = document.getElementById('mic-ns');
     if (ns && data.ns_available === false) {
       ns.disabled = true;
@@ -456,33 +444,6 @@
     });
   }
 
-  function wireMicSendVol(bus) {
-    const id = 'mic-vol-' + bus.toLowerCase();
-    const range = document.getElementById(id);
-    const val = document.getElementById(id + '-val');
-    if (!range) return;
-    range.addEventListener('input', () => {
-      if (val) val.textContent = range.value + '%';
-    });
-    range.addEventListener('change', async () => {
-      range.dataset.pending = '1';
-      try {
-        log('mic → ' + bus + ' send volume → ' + range.value + '%');
-        const r = await post('/api/mic/send_vol', { bus: bus, volume: Number(range.value) });
-        if (r.state) applyState(r.state);
-      } catch (e) {
-        log('FAIL mic → ' + bus + ' volume: ' + e.message);
-        toast(e.message, true);
-        if (range.dataset.serverVolume != null) {
-          range.value = String(Math.round(Number(range.dataset.serverVolume)));
-          if (val) val.textContent = range.value + '%';
-        }
-      } finally {
-        range.dataset.pending = '0';
-      }
-    });
-  }
-
   function wireMicNs() {
     const b = document.getElementById('mic-ns');
     if (!b) return;
@@ -619,8 +580,6 @@
 
     wireMicSend('mic-send-a', 'A');
     wireMicSend('mic-send-b', 'B');
-    wireMicSendVol('A');
-    wireMicSendVol('B');
     wireMicNs();
 
     $('#btn-diagnose').addEventListener('click', openDiagnose);
