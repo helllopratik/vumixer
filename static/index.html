@@ -12,7 +12,7 @@
   <div class="brand">
     <span class="brand-mark">VU</span>
     <span class="brand-name">Mixer</span>
-    <span class="brand-sub">virtual audio mixer · <b id="ver-tag">v4</b> · <span id="code-tag" class="code-tag">code …</span></span>
+    <span class="brand-sub">virtual audio mixer · <b id="ver-tag">v5</b> · <span id="code-tag" class="code-tag">code …</span></span>
   </div>
   <div class="topbar-actions">
     <span id="status" class="status status--wait">connecting…</span>
@@ -58,6 +58,19 @@
         <button class="send" id="mic-send-b" title="Send the microphone to bus B">B</button>
         <button class="send send--fx" id="mic-ns"
                 title="Noise suppression (WebRTC): removes background noise from the mic input">NS</button>
+      </div>
+
+      <div class="mic-send-vols">
+        <div class="fader fader--mini">
+          <div class="fader-top"><span>vol → A</span><span class="fader-val" id="mic-vol-a-val">100%</span></div>
+          <input type="range" id="mic-vol-a" min="0" max="200" step="1" value="100"
+                 title="How loud the mic is inside bus A (per-bus mic level)">
+        </div>
+        <div class="fader fader--mini">
+          <div class="fader-top"><span>vol → B</span><span class="fader-val" id="mic-vol-b-val">100%</span></div>
+          <input type="range" id="mic-vol-b" min="0" max="200" step="1" value="100"
+                 title="How loud the mic is inside bus B (per-bus mic level)">
+        </div>
       </div>
     </article>
 
@@ -151,7 +164,7 @@
   </div>
   <div class="dialog-body">
     <ol class="help-list">
-      <li><b>Pick your microphone</b> in the MIC strip. Its gain and VU meter are shown there. Use the <b>A</b>/<b>B</b> buttons below it to choose which output buses receive the mic — e.g. turn <b>A</b> off so you don't hear yourself, keep <b>B</b> on to send the voice to the other PC over HDMI.</li>
+      <li><b>Pick your microphone</b> in the MIC strip. Its gain and VU meter are shown there. Use the <b>A</b>/<b>B</b> buttons below it to choose which output buses receive the mic — e.g. turn <b>A</b> off so you don't hear yourself, keep <b>B</b> on to send the voice to the other PC over HDMI. The <b>vol → A</b> / <b>vol → B</b> sliders set how loud the mic is inside each bus, so you can boost the mic for one output (up to 200%) without changing the other.</li>
       <li><b>Noise suppression:</b> press <b>NS</b> on the mic strip to remove background noise with the built-in WebRTC filter (no extra software installed).</li>
       <li><b>Pick a device for A and for B</b> — for example your headset on A and HDMI on B. Desktop audio is copied to both; the mic only to the buses you enabled.</li>
       <li><b>Desktop audio</b> is captured by making <code>VM-System</code> the default output. If something is already playing elsewhere, press <b>Catch desktop audio</b>.</li>
@@ -179,6 +192,6 @@
   </div>
 </details>
 
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

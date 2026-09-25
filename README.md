@@ -57,6 +57,9 @@ Windows binary; real-device testing checklist in `PROJECT-PC.md` §10.
 - **Per-bus mic sends** — the mic goes only to the buses you enable, so you can
   send voice to the streaming PC over HDMI while staying silent on your own
   speakers.
+- **Per-bus mic send level** — the `vol → A` / `vol → B` sliders set how loud
+  the mic is inside each bus (0–200%), e.g. boost the mic for a USB/HDMI capture
+  device without changing your own headset.
 - **Noise suppression (WebRTC AEC)** — a dependency-free filter (libspa's
   `aec_method=webrtc`) applied to the mic before it reaches the buses.
 - **Desktop audio** — everything playing to the default output is captured into
@@ -162,6 +165,7 @@ supervisor tick re-checks the graph every few seconds.
 | `/api/mic/gain` | POST | mic volume & mute `{"volume":…,"mute":…}` |
 | `/api/mic/device` | POST | pick microphone `{"device":…}` |
 | `/api/mic/send` | POST | mic→bus send `{"bus":"A"\|"B","enabled":bool}` |
+| `/api/mic/send_vol` | POST | per-bus mic level `{"bus":"A"\|"B","volume":0–200}` |
 | `/api/mic/ns` | POST | noise suppression `{"enabled":bool}` |
 | `/api/bus/gain` | POST | bus volume & mute `{"bus":"A"\|"B",…}` |
 | `/api/bus/device` | POST | pick output for a bus `{"bus":…,"device":…}` |
